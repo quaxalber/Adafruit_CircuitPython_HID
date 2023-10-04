@@ -233,6 +233,8 @@ class Keycode:
     """Keypad ``.`` and Del"""
     KEYPAD_BACKSLASH = 0x64
     """Keypad ``\\`` and ``|`` (Non-US)"""
+    KEYPAD_COMMA = 0x85
+    """Keypad ``,``"""
 
     APPLICATION = 0x65
     """Application: also known as the Menu key (Windows)"""
