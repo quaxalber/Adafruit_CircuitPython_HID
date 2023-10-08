@@ -307,3 +307,12 @@ class Keycode:
         return (
             1 << (keycode - 0xE0) if cls.LEFT_CONTROL <= keycode <= cls.RIGHT_GUI else 0
         )
+
+
+class MouseButton:
+    LEFT = 1
+    """Left mouse button."""
+    RIGHT = 2
+    """Right mouse button."""
+    MIDDLE = 4
+    """Middle mouse button."""
