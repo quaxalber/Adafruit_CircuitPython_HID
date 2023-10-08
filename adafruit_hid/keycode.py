@@ -310,9 +310,13 @@ class Keycode:
 
 
 class MouseButton:
-    LEFT = 0x01
+    LEFT = 1
     """Left mouse button."""
-    RIGHT = 0x02
+    RIGHT = 2
     """Right mouse button."""
-    MIDDLE = 0x04
+    MIDDLE = 4
     """Middle mouse button."""
+    BACK = 8
+    """Back mouse button."""
+    FORWARD = 16
+    """Forward mouse button."""
