@@ -47,6 +47,12 @@ class ConsumerControl:
         # Reuse this bytearray to send consumer reports.
         self._report = bytearray(2)
 
+    def __repr__(self):
+        return repr(self._consumer_device)
+
+    def __str__(self):
+        return str(self._consumer_device)
+
     def send(self, consumer_code: int) -> None:
         """Send a report to do the specified consumer control action,
         and then stop the action (so it will not repeat).

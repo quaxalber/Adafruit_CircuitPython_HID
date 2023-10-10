@@ -41,6 +41,12 @@ class Mouse:
         # report[3] wheel movement
         self.report = bytearray(4)
 
+    def __repr__(self):
+        return repr(self._mouse_device)
+
+    def __str__(self):
+        return str(self._mouse_device)
+
     def press(self, buttons: int) -> None:
         """Press the given mouse buttons.
 
