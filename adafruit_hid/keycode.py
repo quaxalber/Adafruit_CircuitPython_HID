@@ -299,13 +299,6 @@ class Keycode:
     RIGHT_GUI = 0xE7
     """GUI modifier right of the spacebar"""
 
-    MOUSE_LEFT = 0x01
-    """Left mouse button."""
-    MOUSE_RIGHT = 0x02
-    """Right mouse button."""
-    MOUSE_MIDDLE = 0x04
-    """Middle mouse button."""
-
     # pylint: enable-msg=invalid-name
     @classmethod
     def modifier_bit(cls, keycode: int) -> int:
@@ -314,3 +307,12 @@ class Keycode:
         return (
             1 << (keycode - 0xE0) if cls.LEFT_CONTROL <= keycode <= cls.RIGHT_GUI else 0
         )
+
+
+class MouseButton:
+    LEFT = 0x01
+    """Left mouse button."""
+    RIGHT = 0x02
+    """Right mouse button."""
+    MIDDLE = 0x04
+    """Middle mouse button."""
