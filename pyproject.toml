@@ -10,12 +10,13 @@ requires = [
 ]
 
 [project]
-name = "adafruit-circuitpython-hid"
+name = "quax-circuitpython-hid"
 description = "CircuitPython helper library for simulating HID devices."
 version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
-    {name = "Adafruit Industries", email = "circuitpython@adafruit.com"}
+    { name = "quaxalber", email = "pypi@quaxalber.de" },
+    { name = "Adafruit Industries", email = "circuitpython@adafruit.com" },
 ]
 urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_HID"}
 keywords = [
