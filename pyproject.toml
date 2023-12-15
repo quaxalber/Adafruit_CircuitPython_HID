@@ -12,7 +12,7 @@ requires = [
 [project]
 name = "quax-circuitpython-hid"
 description = "CircuitPython helper library for simulating HID devices."
-version = "6.0.2"
+version = "6.0.2.post1"
 readme = "README.rst"
 authors = [
     { name = "quaxalber", email = "pypi@quaxalber.de" },
