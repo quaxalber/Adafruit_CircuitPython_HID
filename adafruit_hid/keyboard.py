@@ -69,9 +69,6 @@ class Keyboard:
         # No keyboard LEDs on.
         self._led_status = b"\x00"
 
-    def __repr__(self):
-        return repr(self._keyboard_device)
-
     def __str__(self):
         return str(self._keyboard_device)
 
