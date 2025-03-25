@@ -310,6 +310,8 @@ class Keycode:
 
 
 class MouseButton:
+    """Mouse button constants."""
+
     LEFT = 1
     """Left mouse button."""
     RIGHT = 2
@@ -320,3 +322,9 @@ class MouseButton:
     """Back mouse button."""
     FORWARD = 16
     """Forward mouse button."""
+    TASK = 32
+    """Task button (if available)."""
+    SIDE = 64
+    """Side button (if available)."""
+    EXTRA = 128
+    """Extra button (if available)."""
