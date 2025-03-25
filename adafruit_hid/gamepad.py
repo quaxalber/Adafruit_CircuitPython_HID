@@ -29,8 +29,8 @@ class Gamepad:
         if not self._gamepad_device:
             raise RuntimeError("No gamepad device found")
 
-        # Extended report size to accommodate all controls
-        self._report = bytearray(16)
+        # Extended report size to accommodate all controls (32 bytes)
+        self._report = bytearray(32)  # Changed from 16 to 32
 
         # Extended button state (32 bits)
         self._buttons_state = 0
