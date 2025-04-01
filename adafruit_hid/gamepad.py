@@ -61,7 +61,7 @@ class Gamepad:
             "hat3": {"x": 0, "y": 0},  # Additional HAT 3
         }
 
-        self.reset()
+    #    self.reset()
 
     def reset(self) -> None:
         """Reset all controls to initial state."""
