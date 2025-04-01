@@ -205,3 +205,30 @@ class Digitizer:
         # Set Report ID (byte 0)
         self._report[0] = 0x05
         self._digitizer_device.send_report(self._report)
+
+    def press(self, *buttons: int) -> None:
+        """Press and hold the given digitizer buttons.
+
+        :param buttons: Button constants to press (from DigitizerButton class)
+        """
+        for button in buttons:
+            # Update the button state in byte 1
+            self._report[1] |= button
+        self._send()
+
+    def release(self, *buttons: int) -> None:
+        """Release the given digitizer buttons.
+
+        :param buttons: Button constants to release (from DigitizerButton class)
+        """
+        for button in buttons:
+            # Clear the button state in byte 1
+            self._report[1] &= ~button
+        self._send()
+
+    def release_all(self) -> None:
+        """Release all digitizer buttons."""
+        # Clear all button states while preserving tool type
+        tool_bits = self._report[1] & 0xF0  # Keep the tool type bits
+        self._report[1] = tool_bits
+        self._send()
