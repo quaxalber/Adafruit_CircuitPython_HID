@@ -85,7 +85,7 @@ class ConsumerControl:
         struct.pack_into("<H", self._report, 0, consumer_code)
         self._consumer_device.send_report(self._report)
 
-    def release(self, consumer_code: int) -> None:
+    def release(self) -> None:
         """Send a report indicating that the consumer control key has been
         released. Only one consumer control key can be pressed at a time.
 
