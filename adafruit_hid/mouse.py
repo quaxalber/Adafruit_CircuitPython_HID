@@ -9,31 +9,114 @@
 * Author(s): Dan Halbert
 """
 
+from .keycode import MouseButton
 from . import find_device
 
 try:
-    from typing import Sequence
+    from typing import Optional, Sequence
 
     import usb_hid
 except ImportError:
     pass
 
 
+class _MouseReportFormat:
+    button_mask = MouseButton.LEFT | MouseButton.MIDDLE | MouseButton.RIGHT | MouseButton.SIDE | MouseButton.EXTRA
+    report_length = 4
+    report_id = None
+    xy_limit = 127
+    wheel_limit = 127
+    pan_limit = 0
+
+    def fill_movement_report(self, report: bytearray, x: int, y: int, wheel: int, pan: int) -> None:
+        report[1] = x & 0xFF
+        report[2] = y & 0xFF
+        report[3] = wheel & 0xFF
+
+    def clear_movement_report(self, report: bytearray) -> None:
+        for index in range(1, self.report_length):
+            report[index] = 0
+
+    def fill_buttons(self, report: bytearray, buttons: int) -> bool:
+        buttons &= self.button_mask
+        if buttons == 0:
+            return False
+        report[0] |= buttons
+        return True
+
+    def clear_buttons(self, report: bytearray, buttons: int) -> bool:
+        buttons &= self.button_mask
+        if buttons == 0:
+            return False
+        report[0] &= ~buttons
+        return True
+
+    def clear_all_buttons(self, report: bytearray) -> None:
+        report[0] = 0
+
+
+class _BootMouseReportFormat(_MouseReportFormat):
+    button_mask = MouseButton.LEFT | MouseButton.MIDDLE | MouseButton.RIGHT
+
+
+class _MouseExReportFormat(_MouseReportFormat):
+    button_mask = (
+        MouseButton.LEFT
+        | MouseButton.MIDDLE
+        | MouseButton.RIGHT
+        | MouseButton.SIDE
+        | MouseButton.EXTRA
+        | MouseButton.FORWARD
+        | MouseButton.BACK
+        | MouseButton.TASK
+    )
+    report_length = 7
+    xy_limit = 32767
+    pan_limit = 127
+
+    def fill_movement_report(self, report: bytearray, x: int, y: int, wheel: int, pan: int) -> None:
+        report[1] = x & 0xFF
+        report[2] = (x >> 8) & 0xFF
+        report[3] = y & 0xFF
+        report[4] = (y >> 8) & 0xFF
+        report[5] = wheel & 0xFF
+        report[6] = pan & 0xFF
+
+
+def _report_format_for_device(device: usb_hid.Device) -> _MouseReportFormat:
+    descriptor = bytes(getattr(device, "descriptor", b""))
+    known_formats = (
+        (bytes(usb_hid.Device.BOOT_MOUSE.descriptor), _BootMouseReportFormat),
+        (bytes(usb_hid.Device.MOUSE.descriptor), _MouseReportFormat),
+        (bytes(usb_hid.Device.MOUSE_EX.descriptor), _MouseExReportFormat),
+    )
+    for known_descriptor, report_format_type in known_formats:
+        if descriptor == known_descriptor:
+            return report_format_type()
+    raise ValueError("Unsupported mouse HID report descriptor.")
+
+
 class Mouse:
     """Send USB HID mouse reports."""
 
-    LEFT_BUTTON = 1
+    LEFT_BUTTON = MouseButton.LEFT
     """Left mouse button."""
-    RIGHT_BUTTON = 2
+    RIGHT_BUTTON = MouseButton.RIGHT
     """Right mouse button."""
-    MIDDLE_BUTTON = 4
+    MIDDLE_BUTTON = MouseButton.MIDDLE
     """Middle mouse button."""
-    BACK_BUTTON = 8
-    """Back mouse button."""
-    FORWARD_BUTTON = 16
+    SIDE_BUTTON = MouseButton.SIDE
+    """Side button."""
+    EXTRA_BUTTON = MouseButton.EXTRA
+    """Extra button."""
+    FORWARD_BUTTON = MouseButton.FORWARD
     """Forward mouse button."""
+    BACK_BUTTON = MouseButton.BACK
+    """Back mouse button."""
+    TASK_BUTTON = MouseButton.TASK
+    """Task button."""
 
-    def __init__(self, devices: Sequence[usb_hid.Device], timeout: int = None) -> None:
+    def __init__(self, devices: Sequence[usb_hid.Device], timeout: Optional[int] = None) -> None:
         """Create a Mouse object that will send USB mouse HID reports.
 
         :param timeout: Time in seconds to wait for USB to become ready before timing out.
@@ -44,13 +127,8 @@ class Mouse:
         ``usage``.
         """
         self._mouse_device = find_device(devices, usage_page=0x1, usage=0x02, timeout=timeout)
-
-        # Reuse this bytearray to send mouse reports.
-        # report[0] buttons pressed (LEFT, MIDDLE, RIGHT)
-        # report[1] x movement
-        # report[2] y movement
-        # report[3] wheel movement
-        self.report = bytearray(4)
+        self._report_format = _report_format_for_device(self._mouse_device)
+        self.report = bytearray(self._report_format.report_length)
 
     def __str__(self):
         return str(self._mouse_device)
@@ -69,8 +147,8 @@ class Mouse:
             # Press the left and right buttons simultaneously.
             m.press(Mouse.LEFT_BUTTON | Mouse.RIGHT_BUTTON)
         """
-        self.report[0] |= buttons
-        self._send_no_move()
+        if self._report_format.fill_buttons(self.report, buttons):
+            self._send_no_move()
 
     def release(self, buttons: int) -> None:
         """Release the given mouse buttons.
@@ -78,12 +156,12 @@ class Mouse:
         :param buttons: a bitwise-or'd combination of ``LEFT_BUTTON``,
             ``MIDDLE_BUTTON``, and ``RIGHT_BUTTON``.
         """
-        self.report[0] &= ~buttons
-        self._send_no_move()
+        if self._report_format.clear_buttons(self.report, buttons):
+            self._send_no_move()
 
     def release_all(self) -> None:
         """Release all the mouse buttons."""
-        self.report[0] = 0
+        self._report_format.clear_all_buttons(self.report)
         self._send_no_move()
 
     def click(self, buttons: int) -> None:
@@ -104,7 +182,7 @@ class Mouse:
         self.press(buttons)
         self.release(buttons)
 
-    def move(self, x: int = 0, y: int = 0, wheel: int = 0) -> None:
+    def move(self, x: int = 0, y: int = 0, wheel: int = 0, pan: int = 0) -> None:
         """Move the mouse and turn the wheel as directed.
 
         :param x: Move the mouse along the x axis. Negative is to the left, positive
@@ -113,6 +191,9 @@ class Mouse:
             positive is downwards.
         :param wheel: Rotate the wheel this amount. Negative is toward the user, positive
             is away from the user. The scrolling effect depends on the host.
+        :param pan: Pan (horizontal scroll) this amount. Negative is to the left,
+            positive is to the right. Ignored if the mouse report format does not
+            support pan.
 
         Examples::
 
@@ -129,26 +210,32 @@ class Mouse:
             # Roll the mouse wheel away from the user.
             m.move(wheel=1)
         """
-        # Send multiple reports if necessary to move or scroll requested amounts.
-        while x != 0 or y != 0 or wheel != 0:
-            partial_x = self._limit(x)
-            partial_y = self._limit(y)
-            partial_wheel = self._limit(wheel)
-            self.report[1] = partial_x & 0xFF
-            self.report[2] = partial_y & 0xFF
-            self.report[3] = partial_wheel & 0xFF
-            self._mouse_device.send_report(self.report)
+        if self._report_format.pan_limit == 0:
+            pan = 0
+
+        while x != 0 or y != 0 or wheel != 0 or pan != 0:
+            partial_x = self._limit(x, self._report_format.xy_limit)
+            partial_y = self._limit(y, self._report_format.xy_limit)
+            partial_wheel = self._limit(wheel, self._report_format.wheel_limit)
+            partial_pan = self._limit(pan, self._report_format.pan_limit)
+            self._report_format.fill_movement_report(self.report, partial_x, partial_y, partial_wheel, partial_pan)
+            self._send_report()
             x -= partial_x
             y -= partial_y
             wheel -= partial_wheel
+            pan -= partial_pan
 
     def _send_no_move(self) -> None:
         """Send a button-only report."""
-        self.report[1] = 0
-        self.report[2] = 0
-        self.report[3] = 0
-        self._mouse_device.send_report(self.report)
+        self._report_format.clear_movement_report(self.report)
+        self._send_report()
+
+    def _send_report(self) -> None:
+        if self._report_format.report_id is None:
+            self._mouse_device.send_report(self.report)
+        else:
+            self._mouse_device.send_report(self.report, self._report_format.report_id)
 
     @staticmethod
-    def _limit(dist: int) -> int:
-        return min(127, max(-127, dist))
+    def _limit(dist: int, limit: int) -> int:
+        return min(limit, max(-limit, dist))

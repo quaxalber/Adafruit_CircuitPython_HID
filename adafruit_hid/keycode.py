@@ -308,21 +308,27 @@ class Keycode:
 
 
 class MouseButton:
-    """Mouse button constants."""
+    """
+    Mouse button constants.
 
-    LEFT = 1
-    """Left mouse button."""
-    RIGHT = 2
-    """Right mouse button."""
-    MIDDLE = 4
-    """Middle mouse button."""
-    BACK = 8
-    """Back mouse button."""
-    FORWARD = 16
-    """Forward mouse button."""
-    TASK = 32
-    """Task button (if available)."""
-    SIDE = 64
-    """Side button (if available)."""
-    EXTRA = 128
-    """Extra button (if available)."""
+    Linux mappings for HID Usage Page 0x09 (Button):
+    https://github.com/torvalds/linux/blob/v6.18/include/uapi/linux/input-event-codes.h#L356
+    https://github.com/torvalds/linux/blob/v6.18/drivers/hid/hid-input.c#L761
+    """
+
+    LEFT = 1 << 0
+    """HID Usage Page Button, ID 1 - Left mouse button."""
+    RIGHT = 1 << 1
+    """HID Usage Page Button, ID 2 - Right mouse button."""
+    MIDDLE = 1 << 2
+    """HID Usage Page Button, ID 3 - Middle mouse button."""
+    SIDE = 1 << 3
+    """HID Usage Page Button, ID 4 - Side button."""
+    EXTRA = 1 << 4
+    """HID Usage Page Button, ID 5 - Extra button."""
+    FORWARD = 1 << 5
+    """HID Usage Page Button, ID 6 - Forward mouse button."""
+    BACK = 1 << 6
+    """HID Usage Page Button, ID 7 - Back mouse button."""
+    TASK = 1 << 7
+    """HID Usage Page Button, ID 8 - Task button."""
